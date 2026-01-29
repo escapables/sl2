@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚆 Swedish Commute Dashboard
 
 A lightweight web dashboard for finding public transport routes across Sweden using buses, trains, trams, and more.
