@@ -105,4 +105,3 @@ MIT License - feel free to use and modify as needed.
 
 - Data provided by [Trafiklab](https://www.trafiklab.se/)
 - Uses [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/)
-=======
