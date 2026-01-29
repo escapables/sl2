@@ -746,26 +746,34 @@ function getTransportType(leg) {
     if (longName.includes("regional")) return "JRE";
   }
 
+  // Check leg.name FIRST (it usually has the most descriptive name)
+  if (leg.name) {
+    const name = leg.name.toLowerCase();
+    console.log("Checking leg.name:", name);
+    if (name.includes("tunnelbana")) return "MET";
+    if (name.includes("buss")) return "BUS";
+    if (name.includes("spårv")) return "TRM";
+    if (name.includes("pendeltåg")) return "JLT";
+    if (name.includes("lokalbana")) return "JLT";
+    if (name.includes("tvärbana")) return "TRM";
+    if (name.includes("nockebybanan")) return "TRM";
+    if (name.includes("lidingöbanan")) return "TRM";
+    if (name.includes("roslagsbanan")) return "JLT";
+    if (name.includes("saltsjöbanan")) return "JLT";
+    if (name.includes("båt")) return "BOAT";
+    if (name.includes("flyg")) return "FLY";
+    if (name.includes("tåg") || name.includes("tag")) return "JRE";
+  }
+
   // Check product.name
   if (product?.name) {
     const prodName = product.name.toLowerCase();
     console.log("Checking product.name:", prodName);
+    if (prodName.includes("tunnelbana")) return "MET";
     if (prodName.includes("buss")) return "BUS";
     if (prodName.includes("spårv")) return "TRM";
-    if (prodName.includes("tunnelbana")) return "MET";
     if (prodName.includes("pendeltåg")) return "JLT";
     if (prodName.includes("tvärbana")) return "TRM";
-  }
-
-  // Check leg.name
-  if (leg.name) {
-    const name = leg.name.toLowerCase();
-    console.log("Checking leg.name:", name);
-    if (name.includes("buss")) return "BUS";
-    if (name.includes("spårv")) return "TRM";
-    if (name.includes("tunnelbana")) return "MET";
-    if (name.includes("pendeltåg")) return "JLT";
-    if (name.includes("tvärbana")) return "TRM";
   }
 
   console.log("Defaulting to JRE");
