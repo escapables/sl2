@@ -7,6 +7,7 @@
 const apiKeyModal = document.getElementById("api-key-modal");
 const apiKeyInput = document.getElementById("api-key-input");
 const rememberKeyCheckbox = document.getElementById("remember-key");
+const closeModalBtn = document.getElementById("close-modal");
 const saveApiKeyBtn = document.getElementById("save-api-key");
 const apiKeyError = document.getElementById("api-key-error");
 const settingsBtn = document.getElementById("settings-btn");
@@ -55,15 +56,19 @@ const transportIcons = {
   BUS: "🚌",
   TLB: "🚌",
   COACH: "🚌",
+  BLT: "🚌",
   // Trams/Light rail
   TRM: "🚊",
   HST: "🚊",
+  SLT: "🚊",
   // Metro
   MET: "🚇",
   URB: "🚇",
+  ULT: "🚉",
   // Other
   FOT: "🚶",
   WALK: "🚶",
+  TRSF: "⏱️",
   BOAT: "⛴️",
   SHIP: "🚢",
   FLY: "✈️",
@@ -82,12 +87,16 @@ const transportNames = {
   BUS: "Bus",
   TLB: "Bus",
   COACH: "Coach",
+  BLT: "Bus",
   TRM: "Tram",
   HST: "Tram",
+  SLT: "Tram",
   MET: "Metro",
   URB: "Urban Rail",
+  ULT: "Tunnelbana",
   FOT: "Walk",
   WALK: "Walk",
+  TRSF: "Transfer",
   BOAT: "Ferry",
   SHIP: "Ship",
   FLY: "Flight",
@@ -119,6 +128,7 @@ function deobfuscateKey(obfuscatedKey) {
       const charCode = decoded.charCodeAt(i) ^ pattern[i % pattern.length];
       result += String.fromCharCode(charCode);
     }
+    console.log("Deobfuscated key, length:", result.length);
     return result;
   } catch (e) {
     console.error("Failed to deobfuscate key:", e);
@@ -127,12 +137,20 @@ function deobfuscateKey(obfuscatedKey) {
 }
 
 function saveApiKey(key, remember) {
+  console.log("saveApiKey called, remember:", remember);
   currentApiKey = key;
   if (remember) {
     const obfuscated = obfuscateKey(key);
-    localStorage.setItem("trafiklab_api_key", obfuscated);
-    localStorage.setItem("trafiklab_key_saved", "true");
+    console.log("Saving key to localStorage, length:", obfuscated.length);
+    try {
+      localStorage.setItem("trafiklab_api_key", obfuscated);
+      localStorage.setItem("trafiklab_key_saved", "true");
+      console.log("Key saved successfully");
+    } catch (e) {
+      console.error("Failed to save to localStorage:", e);
+    }
   } else {
+    console.log("Not saving key (remember is false)");
     localStorage.removeItem("trafiklab_api_key");
     localStorage.removeItem("trafiklab_key_saved");
   }
@@ -148,8 +166,16 @@ function loadApiKey() {
       "Deobfuscated key length:",
       currentApiKey ? currentApiKey.length : 0,
     );
+    if (currentApiKey) {
+      console.log("API key loaded from localStorage");
+    } else {
+      console.warn("Failed to deobfuscate key, clearing storage");
+      localStorage.removeItem("trafiklab_api_key");
+      localStorage.removeItem("trafiklab_key_saved");
+    }
     return !!currentApiKey;
   }
+  console.log("No API key found in localStorage");
   return false;
 }
 
@@ -160,7 +186,8 @@ function getApiKey() {
 function updateKeyStatus() {
   if (currentApiKey) {
     keyStatus.classList.remove("hidden");
-    keyStatus.textContent = "🔒 Key Active";
+    const saved = localStorage.getItem("trafiklab_api_key");
+    keyStatus.textContent = saved ? "🔒 Key Saved" : "🔒 Key Active (session)";
   } else {
     keyStatus.classList.add("hidden");
   }
@@ -174,7 +201,13 @@ function showApiKeyModal() {
 }
 
 function hideApiKeyModal() {
+  console.log("hideApiKeyModal called");
   apiKeyModal.classList.add("hidden");
+}
+
+function canCloseModal() {
+  // Only allow closing if we have a valid API key
+  return !!currentApiKey;
 }
 
 async function validateAndSaveApiKey() {
@@ -194,6 +227,10 @@ async function validateAndSaveApiKey() {
     });
 
     if (resp.ok) {
+      console.log(
+        "Key validated, checkbox checked:",
+        rememberKeyCheckbox.checked,
+      );
       saveApiKey(key, rememberKeyCheckbox.checked);
       hideApiKeyModal();
     } else {
@@ -236,14 +273,27 @@ async function apiFetch(url) {
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Dashboard initializing...");
+  console.log("localStorage content:", { ...localStorage });
+  console.log(
+    "Modal initial hidden state:",
+    apiKeyModal.classList.contains("hidden"),
+  );
   initializeDateTime();
   setupEventListeners();
 
   const hasKey = loadApiKey();
-  console.log("API key loaded:", hasKey);
+  console.log(
+    "API key loaded result:",
+    hasKey,
+    "currentApiKey present:",
+    !!currentApiKey,
+  );
   if (!hasKey) {
+    console.log("No valid key, showing modal");
     showApiKeyModal();
   } else {
+    console.log("Key found, hiding modal");
+    hideApiKeyModal();
     updateKeyStatus();
     console.log("API key active, ready to search");
   }
@@ -268,6 +318,29 @@ function setupEventListeners() {
   settingsBtn.addEventListener("click", showApiKeyModal);
   apiKeyInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") validateAndSaveApiKey();
+  });
+
+  // Close modal button
+  closeModalBtn.addEventListener("click", () => {
+    if (canCloseModal()) {
+      hideApiKeyModal();
+    } else {
+      // Shake animation or error message could go here
+      apiKeyError.textContent = "Please enter an API key to continue";
+      apiKeyError.classList.remove("hidden");
+    }
+  });
+
+  // Click outside modal to close
+  apiKeyModal.addEventListener("click", (e) => {
+    if (e.target === apiKeyModal) {
+      if (canCloseModal()) {
+        hideApiKeyModal();
+      } else {
+        apiKeyError.textContent = "Please enter an API key to continue";
+        apiKeyError.classList.remove("hidden");
+      }
+    }
   });
 
   fromInput.addEventListener("input", (e) => {
@@ -589,6 +662,13 @@ async function searchRoutes() {
     return;
   }
 
+  if (fromId === toId) {
+    alert(
+      "Origin and destination cannot be the same. Please select different locations.",
+    );
+    return;
+  }
+
   showLoading();
 
   try {
@@ -705,6 +785,11 @@ function getTransportType(leg) {
     return "WALK";
   }
 
+  // Handle transfer/waiting legs
+  if (leg.type === "TRSF") {
+    return "TRSF";
+  }
+
   // Product is an array - get the first item
   const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
 
@@ -725,6 +810,9 @@ function getTransportType(leg) {
   // Check product.catOutS
   if (product?.catOutS) {
     console.log("Using product.catOutS:", product.catOutS);
+    // Map codes for icon consistency
+    if (product.catOutS === "SLT") return "TRM";
+    if (product.catOutS === "BLT") return "BUS";
     return product.catOutS;
   }
 
@@ -783,10 +871,12 @@ function getTransportType(leg) {
 function getTransportClass(type) {
   if (!type) return "walk";
   if (type.startsWith("J")) return "train";
-  if (type === "BUS" || type === "TLB" || type === "COACH") return "bus";
-  if (type === "TRM" || type === "HST") return "tram";
-  if (type === "MET" || type === "URB") return "subway";
+  if (type === "BUS" || type === "TLB" || type === "COACH" || type === "BLT")
+    return "bus";
+  if (type === "TRM" || type === "HST" || type === "SLT") return "tram";
+  if (type === "MET" || type === "URB" || type === "ULT") return "subway";
   if (type === "FOT" || type === "WALK") return "walk";
+  if (type === "TRSF") return "transfer";
   if (type === "BOAT" || type === "SHIP" || type === "FERRY") return "boat";
   if (type === "FLY") return "flight";
   return "train";
@@ -806,7 +896,13 @@ function getLegsDetail(legs) {
       const icon = transportIcons[type] || "🚆";
       // Product is an array
       const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
-      const name = product?.name || transportNames[type] || "Walk";
+      let name = product?.name || transportNames[type] || "Walk";
+
+      // Add operator prefix for non-SL/Länstrafik operators
+      const operator = product?.operator || product?.operatorInfo?.name;
+      if (operator && operator !== "SL" && !operator.includes("Länstrafik")) {
+        name = `${operator} ${name}`;
+      }
 
       return `
             <div class="leg-detail">

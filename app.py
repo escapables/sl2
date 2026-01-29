@@ -62,7 +62,7 @@ def nearby_stops():
     url = f"{RESROBOT_BASE}/location.nearbystops"
     params = {
         "originCoordLat": lat,
-        "originCoordLong": lon,
+        "originCoordLon": lon,
         "format": "json",
         "accessId": api_key,
         "maxNo": 10,
