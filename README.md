@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚆 Swedish Commute Dashboard
 
 A lightweight web dashboard for finding public transport routes across Sweden using buses, trains, trams, and more.
@@ -105,3 +106,6 @@ MIT License - feel free to use and modify as needed.
 
 - Data provided by [Trafiklab](https://www.trafiklab.se/)
 - Uses [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/)
+=======
+# sl2
+>>>>>>> 4aa85c945ed217d47d7c0ccecdd8b7abccbf3819
