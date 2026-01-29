@@ -1,6 +1,8 @@
 # 🚆 resrobot-bättre
 En lättviktig webbdashboard för att hitta kollektivtrafikrutter i hela Sverige med bussar, tåg, spårvagnar och mer.
 
+![Dashboard Preview](static/screenshot.png)
+
 ## Funktioner
 
 - 🔍 **Sök platser**: Sök efter stationer och hållplatser i hela Sverige
