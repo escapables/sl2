@@ -1,5 +1,5 @@
 /**
- * Svensk Pendeldashboard - Frontend JavaScript
+ * resrobot-bättre - Frontend JavaScript
  * Säker API-nyckellagring med förvrängning
  */
 
@@ -12,6 +12,16 @@ const saveApiKeyBtn = document.getElementById("save-api-key");
 const apiKeyError = document.getElementById("api-key-error");
 const settingsBtn = document.getElementById("settings-btn");
 const keyStatus = document.getElementById("key-status");
+
+// DOM Elements - Alternatives Modal
+const alternativesModal = document.getElementById("alternatives-modal");
+const alternativesList = document.getElementById("alternatives-list");
+const alternativesInfo = document.getElementById("alternatives-info");
+const closeAlternativesBtn = document.getElementById("close-alternatives");
+
+// State for alternatives
+let currentTrip = null;
+let currentLegIndex = null;
 
 // DOM Elements - Search
 const fromInput = document.getElementById("from-location");
@@ -368,6 +378,14 @@ function setupEventListeners() {
   toCurrentBtn.addEventListener("click", () => getCurrentLocation("to"));
   swapBtn.addEventListener("click", swapLocations);
   searchBtn.addEventListener("click", searchRoutes);
+
+  // Alternatives modal event listeners
+  closeAlternativesBtn.addEventListener("click", hideAlternativesModal);
+  alternativesModal.addEventListener("click", (e) => {
+    if (e.target === alternativesModal) {
+      hideAlternativesModal();
+    }
+  });
 
   fromInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -759,13 +777,42 @@ function displayTrips(trips) {
   resultsSection.classList.remove("hidden");
   tripsList.innerHTML = "";
 
-  trips.forEach((trip) => {
-    const card = createTripCard(trip);
+  // Kolla om det finns ett föredraget alternativ
+  const preferredLegIndex = sessionStorage.getItem("preferredLegIndex");
+  const preferredLegTime = sessionStorage.getItem("preferredLegTime");
+  const preferredLegDate = sessionStorage.getItem("preferredLegDate");
+
+  // Sortera resor så att de med det föredragna alternativet visas först
+  const sortedTrips = [...trips].sort((a, b) => {
+    if (!preferredLegIndex) return 0;
+
+    const aLegs = a.LegList?.Leg || [];
+    const bLegs = b.LegList?.Leg || [];
+
+    const aMatches =
+      aLegs[preferredLegIndex]?.Origin.time === preferredLegTime &&
+      aLegs[preferredLegIndex]?.Origin.date === preferredLegDate;
+    const bMatches =
+      bLegs[preferredLegIndex]?.Origin.time === preferredLegTime &&
+      bLegs[preferredLegIndex]?.Origin.date === preferredLegDate;
+
+    if (aMatches && !bMatches) return -1;
+    if (!aMatches && bMatches) return 1;
+    return 0;
+  });
+
+  sortedTrips.forEach((trip, index) => {
+    const card = createTripCard(trip, index === 0 && preferredLegIndex);
     tripsList.appendChild(card);
   });
+
+  // Rensa preferred alternativ efter visning
+  sessionStorage.removeItem("preferredLegIndex");
+  sessionStorage.removeItem("preferredLegTime");
+  sessionStorage.removeItem("preferredLegDate");
 }
 
-function createTripCard(trip) {
+function createTripCard(trip, isPreferred = false) {
   const legs = trip.LegList?.Leg || [];
   const firstLeg = legs[0];
   const lastLeg = legs[legs.length - 1];
@@ -775,7 +822,11 @@ function createTripCard(trip) {
   const duration = calculateDuration(firstLeg.Origin, lastLeg.Destination);
 
   const card = document.createElement("div");
-  card.className = "trip-card";
+  card.className = `trip-card${isPreferred ? " trip-preferred" : ""}`;
+
+  const preferredBadge = isPreferred
+    ? '<span class="preferred-badge">⭐ Med ditt valda alternativ</span>'
+    : "";
   card.innerHTML = `
         <div class="trip-header">
             <div class="trip-time">${depTime} → ${arrTime}</div>
@@ -784,9 +835,20 @@ function createTripCard(trip) {
         <div class="trip-details">
             <div class="legs-summary">${getLegsSummary(legs)}</div>
             <div class="transfers">${getTransfersText(legs)}</div>
+            ${preferredBadge}
         </div>
-        <div class="trip-legs">${getLegsDetail(legs)}</div>
+        <div class="trip-legs">${getLegsDetail(legs, trip)}</div>
     `;
+
+  // Lägg till click handlers för klickbara sträckor
+  const legElements = card.querySelectorAll(".leg-clickable");
+  legElements.forEach((legEl) => {
+    legEl.addEventListener("click", (e) => {
+      e.stopPropagation(); // Förhindra att kortet expanderas
+      const legIndex = parseInt(legEl.dataset.legIndex);
+      showAlternativesModal(legs[legIndex], legIndex, trip);
+    });
+  });
 
   card.addEventListener("click", () => card.classList.toggle("expanded"));
   return card;
@@ -930,14 +992,26 @@ function getTransfersText(legs) {
     : `${transportLegs.length - 1} byte${transportLegs.length > 2 ? "n" : ""}`;
 }
 
-function getLegsDetail(legs) {
+function getLegsDetail(legs, trip) {
+  // Kolla om det finns ett föredraget alternativ
+  const preferredLegIndex = sessionStorage.getItem("preferredLegIndex");
+  const preferredLegTime = sessionStorage.getItem("preferredLegTime");
+  const preferredLegOrigin = sessionStorage.getItem("preferredLegOrigin");
+  const preferredLegDestination = sessionStorage.getItem(
+    "preferredLegDestination",
+  );
+
   return legs
-    .map((leg) => {
+    .map((leg, index) => {
       const type = getTransportType(leg);
       const icon = transportIcons[type] || "🚆";
       // Product is an array
       const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
       let name = product?.name || transportNames[type] || "Gång";
+
+      // Översätt engelska "Walk" till svenska
+      if (name === "Walk") name = "Promenad";
+      if (name === "Transfer") name = "Byte";
 
       // Lägg till operatörsprefix för icke-SL/Länstrafik-operatörer
       const operator = product?.operator || product?.operatorInfo?.name;
@@ -945,10 +1019,23 @@ function getLegsDetail(legs) {
         name = `${operator} ${name}`;
       }
 
+      // Endast klickbara för transportsträckor (JNY), inte promenad eller byte
+      const isClickable = leg.type === "JNY";
+      const clickableClass = isClickable ? "leg-clickable" : "";
+
+      // Kolla om denna sträcka är det föredragna alternativet
+      const isPreferredLeg =
+        preferredLegIndex &&
+        parseInt(preferredLegIndex) === index &&
+        leg.Origin.time === preferredLegTime &&
+        leg.Origin.name === preferredLegOrigin;
+      const preferredClass = isPreferredLeg ? "leg-preferred" : "";
+      const preferredIcon = isPreferredLeg ? "⭐ " : "";
+
       return `
-            <div class="leg-detail">
+            <div class="leg-detail ${clickableClass} ${preferredClass}" data-leg-index="${index}">
                 <div class="leg-time-line">
-                    <span class="leg-dep-time">${formatTimeString(leg.Origin.time)}</span>
+                    <span class="leg-dep-time">${preferredIcon}${formatTimeString(leg.Origin.time)}</span>
                     <span class="time-line"></span>
                     <span class="leg-arr-time">${formatTimeString(leg.Destination.time)}</span>
                 </div>
@@ -988,4 +1075,281 @@ function showError(message) {
   noResultsSection.classList.add("hidden");
   errorMessageEl.textContent = message;
   errorResultsSection.classList.remove("hidden");
+}
+
+// ==================== ALTERNATIVE DEPARTURES ====================
+
+function showAlternativesModal(leg, legIndex, trip) {
+  currentLegIndex = legIndex;
+  currentTrip = trip;
+
+  const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
+  const stopId = leg.Origin.extId || leg.Origin.id;
+  const stopName = leg.Origin.name;
+  const currentTime = leg.Origin.time;
+
+  const legDuration = calculateLegDuration(leg);
+  alternativesInfo.innerHTML = `Visar avgångar från ${formatLocationName(stopName)} mot ${formatLocationName(leg.Destination.name)}. Nuvarande sträcka tar ${legDuration} minuter.<br><small>Observera: Om du väljer ett annat alternativ räknas hela resan om för att hitta de bästa anslutningarna.</small>`;
+  alternativesList.innerHTML =
+    '<div class="suggestion-item"><span class="loading-text">Laddar alternativ...</span></div>';
+  alternativesModal.classList.remove("hidden");
+
+  fetchAlternativeDepartures(stopId, leg, trip);
+}
+
+function hideAlternativesModal() {
+  alternativesModal.classList.add("hidden");
+  currentTrip = null;
+  currentLegIndex = null;
+}
+
+async function fetchAlternativeDepartures(stopId, currentLeg, trip) {
+  try {
+    // Beräkna tidsfönster (30 minuter före och efter)
+    const legDate = currentLeg.Origin.date;
+    const legTime = currentLeg.Origin.time;
+    const dateTime = new Date(`${legDate}T${legTime}`);
+
+    // Formatera tid för API (HH:mm)
+    const timeStr = formatTimeString(legTime);
+
+    // Använd departureBoard för att hämta avgångar (120 minuter för att få fler alternativ)
+    const url = `/api/departures?id=${stopId}&date=${legDate}&time=${timeStr}&duration=120&maxJourneys=50`;
+
+    const resp = await apiFetch(url);
+    const data = await resp.json();
+
+    if (data.Departure) {
+      displayAlternatives(data.Departure, currentLeg, trip);
+    } else {
+      alternativesList.innerHTML =
+        '<div class="suggestion-item no-results"><span class="no-results-text">Inga alternativa avgångar hittades</span></div>';
+    }
+  } catch (e) {
+    console.error("Kunde inte hämta alternativa avgångar:", e);
+    alternativesList.innerHTML =
+      '<div class="suggestion-item error"><span class="error-text">Kunde inte ladda alternativ</span></div>';
+  }
+}
+
+function displayAlternatives(departures, currentLeg, trip) {
+  const currentProduct = Array.isArray(currentLeg.Product)
+    ? currentLeg.Product[0]
+    : currentLeg.Product;
+  const currentLine = currentProduct?.line || currentProduct?.displayNumber;
+
+  // Beräkna restid för nuvarande sträcka (i minuter)
+  const legDuration = calculateLegDuration(currentLeg);
+  console.log(`Nuvarande sträckas restid: ${legDuration} minuter`);
+
+  // Kategorisera avgångar efter restid (endast samma riktning)
+  const categories = {
+    samma: [], // Samma linje, samma riktning
+    snabbare: [], // Kortare restid
+    langsammare: [], // Längre restid
+  };
+
+  departures.forEach((dep) => {
+    // Kontrollera om detta är exakt samma avgång (tid, datum och linje)
+    const depLine = dep.Product?.line || dep.displayNumber;
+    const isCurrent =
+      dep.time === currentLeg.Origin.time &&
+      dep.date === currentLeg.Origin.date &&
+      depLine === currentLine;
+
+    const isSameDirection =
+      dep.direction &&
+      dep.direction.includes(currentLeg.Destination.name.substring(0, 10));
+
+    // Uppskattad restid (om tillgänglig från API, annars använd nuvarande som referens)
+    const estimatedDuration = dep.duration
+      ? parseInt(dep.duration)
+      : legDuration;
+    const durationDiff = estimatedDuration - legDuration;
+
+    const depData = {
+      ...dep,
+      isCurrent,
+      durationDiff,
+      estimatedDuration,
+    };
+
+    if (isCurrent) {
+      categories.samma.push(depData);
+    } else if (isSameDirection) {
+      if (durationDiff < -5) {
+        categories.snabbare.push(depData);
+      } else if (durationDiff > 5) {
+        categories.langsammare.push(depData);
+      } else {
+        categories.samma.push(depData);
+      }
+    }
+    // Ignorera avgångar som går åt andra håll
+  });
+
+  // Sortera varje kategori efter tid
+  Object.keys(categories).forEach((key) => {
+    categories[key].sort(
+      (a, b) =>
+        getTimeDifference(currentLeg.Origin.time, a.time) -
+        getTimeDifference(currentLeg.Origin.time, b.time),
+    );
+  });
+
+  // Bygg HTML
+  let html = "";
+
+  // Hjälpfunktion för att formatera avgång
+  const formatDeparture = (dep) => {
+    const timeDiff = getTimeDifference(currentLeg.Origin.time, dep.time);
+    const diffText =
+      timeDiff === 0
+        ? " (nuvarande)"
+        : timeDiff > 0
+          ? ` (+${timeDiff} min)`
+          : ` (${timeDiff} min)`;
+
+    const durationText = dep.durationDiff
+      ? ` (~${dep.estimatedDuration} min)`
+      : "";
+
+    const icon = transportIcons[dep.Product?.catOutS] || "🚌";
+
+    return `
+      <div class="suggestion-item alternative-departure ${dep.isCurrent ? "current" : ""}"
+           data-time="${dep.time}" data-date="${dep.date}">
+        <span class="icon">${icon}</span>
+        <span class="name">
+          ${dep.time.substring(0, 5)}${diffText} -
+          ${dep.name || dep.Product?.name} mot ${formatLocationName(dep.direction)}${durationText}
+        </span>
+        <span class="type">${dep.isCurrent ? "Nuvarande" : "Välj"}</span>
+      </div>
+    `;
+  };
+
+  // Visa kategorier
+  if (categories.samma.length > 0) {
+    html += '<div class="alt-category">Samma linje/riktning:</div>';
+    html += categories.samma.slice(0, 4).map(formatDeparture).join("");
+  }
+
+  if (categories.snabbare.length > 0) {
+    html += '<div class="alt-category">Snabbare alternativ:</div>';
+    html += categories.snabbare.slice(0, 3).map(formatDeparture).join("");
+  }
+
+  if (categories.langsammare.length > 0) {
+    html += '<div class="alt-category">Långsammare alternativ:</div>';
+    html += categories.langsammare.slice(0, 2).map(formatDeparture).join("");
+  }
+
+  if (html === "") {
+    html =
+      '<div class="suggestion-item no-results"><span class="no-results-text">Inga alternativa avgångar hittades</span></div>';
+  }
+
+  alternativesList.innerHTML = html;
+
+  // Lägg till click handlers
+  alternativesList
+    .querySelectorAll(".alternative-departure")
+    .forEach((item) => {
+      item.addEventListener("click", async () => {
+        // Spara värdena innan vi döljer modalen
+        const selectedTime = item.dataset.time;
+        const selectedDate = item.dataset.date;
+        const trip = currentTrip;
+        const legIdx = currentLegIndex;
+
+        if (!trip || legIdx === null) return;
+
+        hideAlternativesModal();
+        await selectAlternativeDeparture(
+          selectedDate,
+          selectedTime,
+          trip,
+          legIdx,
+        );
+      });
+    });
+}
+
+function calculateLegDuration(leg) {
+  // Beräkna restid för en sträcka i minuter
+  const dep = new Date(`${leg.Origin.date}T${leg.Origin.time}`);
+  const arr = new Date(`${leg.Destination.date}T${leg.Destination.time}`);
+  return Math.floor((arr - dep) / 60000);
+}
+
+function getTimeDifference(time1, time2) {
+  const [h1, m1] = time1.split(":").map(Number);
+  const [h2, m2] = time2.split(":").map(Number);
+  return h2 * 60 + m2 - (h1 * 60 + m1);
+}
+
+async function selectAlternativeDeparture(date, time, trip, legIdx) {
+  if (!trip || legIdx === null) return;
+
+  showLoading();
+
+  // Hämta information om den valda sträckan
+  const legs = trip.LegList?.Leg || [];
+  const selectedLeg = legs[legIdx];
+
+  // Beräkna tidsförskjutningen för den valda sträckan
+  const originalTime = selectedLeg.Origin.time;
+  const timeDiffMinutes = getTimeDifference(originalTime, time);
+
+  console.log(
+    `Byter sträcka ${legIdx}: ${originalTime} → ${time} (${timeDiffMinutes} min skillnad)`,
+  );
+
+  // Hämta ursprung och destination för hela resan
+  const firstLeg = legs[0];
+  const lastLeg = legs[legs.length - 1];
+
+  const fromId = firstLeg.Origin.extId;
+  const toId = lastLeg.Destination.extId;
+
+  // Sätt ny tid (justera för tidsförskjutningen)
+  const originalDateTime = new Date(
+    `${firstLeg.Origin.date}T${firstLeg.Origin.time}`,
+  );
+  const newDateTime = new Date(
+    originalDateTime.getTime() + timeDiffMinutes * 60000,
+  );
+
+  dateInput.value = formatDate(newDateTime);
+  timeInput.value = formatTime(newDateTime);
+
+  fromIdInput.value = fromId;
+  toIdInput.value = toId;
+  fromInput.value = formatLocationName(firstLeg.Origin.name);
+  toInput.value = formatLocationName(lastLeg.Destination.name);
+
+  // Spara information om det valda alternativet för att visa det senare
+  sessionStorage.setItem("preferredLegIndex", legIdx);
+  sessionStorage.setItem("preferredLegOrigin", selectedLeg.Origin.name);
+  sessionStorage.setItem(
+    "preferredLegDestination",
+    selectedLeg.Destination.name,
+  );
+  sessionStorage.setItem("preferredLegTime", time);
+  sessionStorage.setItem("preferredLegDate", date);
+
+  // Uppdatera laddningsmeddelandet
+  const loadingText = document.querySelector("#loading p");
+  if (loadingText) {
+    loadingText.textContent = `Söker resor med avgång ${time.substring(0, 5)}...`;
+  }
+
+  // Trigga ny sökning
+  await searchRoutes();
+
+  // Återställ laddningsmeddelandet
+  if (loadingText) {
+    loadingText.textContent = "Hittar de bästa rutterna...";
+  }
 }

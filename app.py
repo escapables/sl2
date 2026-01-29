@@ -162,6 +162,44 @@ def validate_key():
         return jsonify({"valid": False, "error": str(e)}), 502
 
 
+@app.route("/api/departures")
+def get_departures():
+    """Hämta avgångar för en specifik hållplats."""
+    stop_id = request.args.get("id")
+    date = request.args.get("date")
+    time = request.args.get("time")
+    duration = request.args.get("duration", "60")
+    max_journeys = request.args.get("maxJourneys", "20")
+    api_key = get_api_key()
+
+    if not stop_id:
+        return jsonify({"error": "Saknar id-parameter"}), 400
+
+    if not api_key:
+        return jsonify({"error": "API-nyckel inte konfigurerad"}), 401
+
+    url = f"{RESROBOT_BASE}/departureBoard"
+    params = {
+        "id": stop_id,
+        "format": "json",
+        "accessId": api_key,
+        "duration": duration,
+        "maxJourneys": max_journeys,
+    }
+
+    if date:
+        params["date"] = date
+    if time:
+        params["time"] = time
+
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        return jsonify(resp.json())
+    except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 502
+
+
 @app.route("/api/test-route")
 def test_route():
     """Testa rutt-slutpunkten med exempeldata."""

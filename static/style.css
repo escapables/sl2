@@ -3,6 +3,7 @@
 :root {
     --primary: #0066b3;
     --primary-dark: #004d8a;
+    --primary-light: #e6f2ff;
     --secondary: #00a651;
     --bg: #f5f7fa;
     --card-bg: #ffffff;
@@ -109,6 +110,79 @@ header p {
 .close-btn:hover {
     background: var(--border-color);
     color: var(--text-color);
+}
+
+/* Alternatives Modal */
+.alternatives-content {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#alternatives-list {
+    margin-top: 16px;
+}
+
+#alternatives-list .suggestion-item {
+    cursor: pointer;
+    padding: 12px 16px;
+}
+
+#alternatives-list .suggestion-item:hover {
+    background: var(--primary-light);
+}
+
+#alternatives-list .suggestion-item.current {
+    background: var(--primary-light);
+    border-left: 3px solid var(--primary);
+}
+
+#alternatives-list .suggestion-item .type {
+    font-size: 0.8rem;
+    color: var(--primary);
+}
+
+.alt-category {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-top: 12px;
+    margin-bottom: 4px;
+    padding-left: 8px;
+    border-left: 2px solid var(--primary);
+}
+
+#alternatives-info small {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Clickable Legs */
+.leg-clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.leg-clickable:hover {
+    background: var(--primary-light);
+    border-radius: 8px;
+}
+
+.leg-clickable::after {
+    content: "⚡";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    opacity: 0.6;
+}
+
+.leg-preferred {
+    background: rgba(0, 102, 179, 0.15);
+    border-left: 3px solid var(--primary);
 }
 
 @keyframes slideIn {
@@ -595,6 +669,21 @@ header p {
 
 .trip-card.expanded .trip-legs {
     display: block;
+}
+
+.trip-card.trip-preferred {
+    border: 2px solid var(--primary);
+    background: var(--primary-light);
+}
+
+.preferred-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-top: 8px;
 }
 
 .leg-detail {

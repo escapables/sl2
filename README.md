@@ -1,14 +1,13 @@
 # 🚆 resrobot-bättre
 En lättviktig webbdashboard för att hitta kollektivtrafikrutter i hela Sverige med bussar, tåg, spårvagnar och mer.
 
-![Dashboard Preview](static/screenshot.png)
-
 ## Funktioner
 
 - 🔍 **Sök platser**: Sök efter stationer och hållplatser i hela Sverige
 - 📍 **Nuvarande plats**: Använd din GPS för att hitta närliggande hållplatser
 - 🚆 **Multimodala rutter**: Få rutter med tåg, bussar, spårvagnar, tunnelbana och mer
 - ⏰ **Avgångstid**: Planera resor för specifika datum och tider
+- 🔄 **Flexibla byten**: Klicka på en sträcka för att se alternativa avgångar grupperade efter restid
 - 🔑 **Säker API-nyckellagring**: Nyckeln är förvrängd och lagras lokalt i din webbläsare
 - 📱 **Mobilanpassad**: Responsiv design fungerar på alla enheter
 - ⚡ **Lättviktig**: Inga tunga ramverk, snabb laddning
@@ -58,6 +57,7 @@ Din API-nyckel är **förvrängd** (inte klartext) och lagras i din webbläsares
 
 - Använd 📍-knappen för att hitta hållplatser nära din nuvarande plats
 - Klicka på ⇅ för att byta ursprung och destination
+- **Klicka på en sträcka** (tåg/buss) i ruttinformationen för att se alternativa avgångar
 - Stationsnamn formateras för läsbarhet
 
 ## Projektstruktur
@@ -92,6 +92,7 @@ Flask-backenden proxyar begäranden för att skydda din API-nyckel:
 - `GET /api/search?q=<fråga>` - Sök efter platser
 - `GET /api/nearby?lat=<lat>&lon=<lon>` - Hitta närliggande hållplatser
 - `GET /api/route?from=<id>&to=<id>&date=<datum>&time=<tid>` - Hämta rutter
+- `GET /api/departures?id=<id>&date=<datum>&time=<tid>&duration=<min>&maxJourneys=<n>` - Hämta avgångar för en hållplats
 - `POST /api/validate-key` - Validera en API-nyckel
 
 Alla slutpunkter kräver headern `X-API-Key`.
