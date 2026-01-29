@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="sv">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Swedish Commute Dashboard</title>
+        <title>resrobot-bättre</title>
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='style.css') }}"
@@ -12,7 +12,7 @@
     <body>
         <div class="container">
             <header>
-                <h1>🚆 Swedish Commute Dashboard</h1>
+                <h1>🚆 resrobot-bättre</h1>
                 <p>
                     Find the quickest route using buses, trains, and public
                     transport across Sweden
@@ -22,47 +22,47 @@
             <!-- API Key Modal -->
             <div id="api-key-modal" class="modal">
                 <div class="modal-content">
-                    <button id="close-modal" class="close-btn" title="Close">
+                    <button id="close-modal" class="close-btn" title="Stäng">
                         ×
                     </button>
-                    <h2>🔑 API Key Required</h2>
+                    <h2>🔑 API-nyckel krävs</h2>
                     <p>
                         To use this dashboard, you need a free API key from
                         Trafiklab.
                     </p>
                     <ol class="steps">
                         <li>
-                            Go to
+                            Gå till
                             <a href="https://www.trafiklab.se/" target="_blank"
                                 >trafiklab.se</a
                             >
-                            and create an account
+                            och skapa ett konto
                         </li>
                         <li>
                             Subscribe to the
                             <strong>ResRobot - v2.1</strong> API (Bronze tier is
                             free)
                         </li>
-                        <li>Copy your API key and paste it below</li>
+                        <li>Kopiera din API-nyckel och klistra in den nedan</li>
                     </ol>
                     <div class="input-group">
-                        <label for="api-key-input">Your API Key</label>
+                        <label for="api-key-input">Din API-nyckel</label>
                         <input
                             type="password"
                             id="api-key-input"
-                            placeholder="Enter your Trafiklab API key..."
+                            placeholder="Ange din Trafiklab API-nyckel..."
                         />
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="remember-key" />
                         <label for="remember-key"
-                            >Remember this key (stored securely in
-                            browser)</label
+                            >Kom ihåg denna nyckel (lagras säkert i
+                            webbläsaren)</label
                         >
                     </div>
                     <div id="api-key-error" class="error-message hidden"></div>
                     <button id="save-api-key" class="primary-btn">
-                        Start Using Dashboard
+                        Börja använda dashboarden
                     </button>
                 </div>
             </div>
@@ -72,12 +72,12 @@
                 <button
                     id="settings-btn"
                     class="icon-btn"
-                    title="Change API Key"
+                    title="Ändra API-nyckel"
                 >
-                    ⚙️ Settings
+                    ⚙️ Inställningar
                 </button>
                 <span id="key-status" class="key-badge hidden"
-                    >🔒 Key Saved</span
+                    >🔒 Nyckel sparad</span
                 >
             </div>
 
@@ -85,17 +85,17 @@
                 <section class="search-section">
                     <div class="location-inputs">
                         <div class="input-group">
-                            <label for="from-location">From</label>
+                            <label for="from-location">Från</label>
                             <div class="search-box">
                                 <input
                                     type="text"
                                     id="from-location"
-                                    placeholder="Enter station or address..."
+                                    placeholder="Ange station eller adress..."
                                     autocomplete="off"
                                 />
                                 <button
                                     id="from-current"
-                                    title="Use my current location"
+                                    title="Använd min nuvarande plats"
                                 >
                                     📍
                                 </button>
@@ -107,12 +107,12 @@
                             <input type="hidden" id="from-id" />
                         </div>
 
-                        <button id="swap-locations" title="Swap locations">
+                        <button id="swap-locations" title="Byt platser">
                             ⇅
                         </button>
 
                         <div class="input-group">
-                            <label for="to-location">To</label>
+                            <label for="to-location">Till</label>
                             <div class="search-box">
                                 <input
                                     type="text"
@@ -134,31 +134,33 @@
 
                     <div class="time-options">
                         <div class="input-group">
-                            <label for="travel-date">Date</label>
+                            <label for="travel-date">Datum</label>
                             <input type="date" id="travel-date" />
                         </div>
                         <div class="input-group">
-                            <label for="travel-time">Time</label>
+                            <label for="travel-time">Tid</label>
                             <input type="time" id="travel-time" />
                         </div>
                         <button id="search-btn" class="primary-btn">
-                            Find Routes
+                            Hitta rutter
                         </button>
                     </div>
                 </section>
 
                 <section id="loading" class="loading hidden">
                     <div class="spinner"></div>
-                    <p>Finding the best routes...</p>
+                    <p>Hittar de bästa rutterna...</p>
                 </section>
 
                 <section id="results" class="results hidden">
-                    <h2>Recommended Routes</h2>
+                    <h2>Rekommenderade rutter</h2>
                     <div id="trips-list"></div>
                 </section>
 
                 <section id="no-results" class="no-results hidden">
-                    <p>No routes found. Try different locations or times.</p>
+                    <p>
+                        Inga rutter hittades. Prova andra platser eller tider.
+                    </p>
                 </section>
 
                 <section id="error-results" class="no-results hidden">
@@ -168,11 +170,11 @@
 
             <footer>
                 <p>
-                    Data provided by
+                    Data tillhandahållna av
                     <a href="https://www.trafiklab.se/" target="_blank"
                         >Trafiklab</a
                     >
-                    • Uses ResRobot API
+                    • Använder ResRobot API
                 </p>
             </footer>
         </div>

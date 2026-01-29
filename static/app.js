@@ -1,6 +1,6 @@
 /**
- * Swedish Commute Dashboard - Frontend JavaScript
- * Secure API Key Storage with Obfuscation
+ * Svensk Pendeldashboard - Frontend JavaScript
+ * Säker API-nyckellagring med förvrängning
  */
 
 // DOM Elements - API Key Modal
@@ -43,29 +43,29 @@ let selectedFrom = null;
 let selectedTo = null;
 let currentApiKey = null;
 
-// Transport type icons - extended for all Swedish transport types
+// Transporttypsikoner - utökad för alla svenska transporttyper
 const transportIcons = {
-  // Trains
+  // Tåg
   JRE: "🚆",
   JIC: "🚄",
   JBL: "🚅",
   JLT: "🚃",
   JLX: "🚂",
   JEX: "🚄",
-  // Buses
+  // Busssar
   BUS: "🚌",
   TLB: "🚌",
   COACH: "🚌",
   BLT: "🚌",
-  // Trams/Light rail
+  // Spårvagnar/Lätt räls
   TRM: "🚊",
   HST: "🚊",
   SLT: "🚊",
-  // Metro
+  // Tunnelbana
   MET: "🚇",
   URB: "🚇",
   ULT: "🚉",
-  // Other
+  // Övrigt
   FOT: "🚶",
   WALK: "🚶",
   TRSF: "⏱️",
@@ -78,34 +78,34 @@ const transportIcons = {
 };
 
 const transportNames = {
-  JRE: "Regional Train",
+  JRE: "Regionaltåg",
   JIC: "InterCity",
-  JBL: "High Speed Train",
-  JLT: "Local Train",
-  JLX: "Night Train",
-  JEX: "Express Train",
+  JBL: "Snabbtåg",
+  JLT: "Lokaltåg",
+  JLX: "Nattåg",
+  JEX: "Expresståg",
   BUS: "Bus",
   TLB: "Bus",
-  COACH: "Coach",
+  COACH: "Långfärdsbuss",
   BLT: "Bus",
-  TRM: "Tram",
-  HST: "Tram",
-  SLT: "Tram",
-  MET: "Metro",
-  URB: "Urban Rail",
+  TRM: "Spårvagn",
+  HST: "Spårvagn",
+  SLT: "Spårvagn",
+  MET: "Tunnelbana",
+  URB: "Pendeltåg",
   ULT: "Tunnelbana",
-  FOT: "Walk",
-  WALK: "Walk",
-  TRSF: "Transfer",
-  BOAT: "Ferry",
-  SHIP: "Ship",
-  FLY: "Flight",
+  FOT: "Promenad",
+  WALK: "Promenad",
+  TRSF: "Byte",
+  BOAT: "Färja",
+  SHIP: "Fartyg",
+  FLY: "Flyg",
   TAXI: "Taxi",
-  FUN: "Cable Car",
-  FERRY: "Ferry",
+  FUN: "Linbana",
+  FERRY: "Färja",
 };
 
-// ==================== API KEY SECURITY ====================
+// ==================== API-NYCKELSÄKERHET ====================
 
 function obfuscateKey(key) {
   if (!key) return "";
@@ -128,29 +128,29 @@ function deobfuscateKey(obfuscatedKey) {
       const charCode = decoded.charCodeAt(i) ^ pattern[i % pattern.length];
       result += String.fromCharCode(charCode);
     }
-    console.log("Deobfuscated key, length:", result.length);
+    console.log("Avförvrängd nyckel, längd:", result.length);
     return result;
   } catch (e) {
-    console.error("Failed to deobfuscate key:", e);
+    console.error("Kunde inte avförvränga nyckel:", e);
     return "";
   }
 }
 
 function saveApiKey(key, remember) {
-  console.log("saveApiKey called, remember:", remember);
+  console.log("saveApiKey anropad, remember:", remember);
   currentApiKey = key;
   if (remember) {
     const obfuscated = obfuscateKey(key);
-    console.log("Saving key to localStorage, length:", obfuscated.length);
+    console.log("Sparar nyckel till localStorage, längd:", obfuscated.length);
     try {
       localStorage.setItem("trafiklab_api_key", obfuscated);
       localStorage.setItem("trafiklab_key_saved", "true");
-      console.log("Key saved successfully");
+      console.log("Nyckel sparad framgångsrikt");
     } catch (e) {
-      console.error("Failed to save to localStorage:", e);
+      console.error("Kunde inte spara till localStorage:", e);
     }
   } else {
-    console.log("Not saving key (remember is false)");
+    console.log("Sparar inte nyckel (remember är false)");
     localStorage.removeItem("trafiklab_api_key");
     localStorage.removeItem("trafiklab_key_saved");
   }
@@ -159,7 +159,7 @@ function saveApiKey(key, remember) {
 
 function loadApiKey() {
   const saved = localStorage.getItem("trafiklab_api_key");
-  console.log("localStorage has key:", !!saved);
+  console.log("localStorage har nyckel:", !!saved);
   if (saved) {
     currentApiKey = deobfuscateKey(saved);
     console.log(
@@ -167,15 +167,15 @@ function loadApiKey() {
       currentApiKey ? currentApiKey.length : 0,
     );
     if (currentApiKey) {
-      console.log("API key loaded from localStorage");
+      console.log("API-nyckel laddad från localStorage");
     } else {
-      console.warn("Failed to deobfuscate key, clearing storage");
+      console.warn("Kunde inte avförvränga nyckel, rensar lagring");
       localStorage.removeItem("trafiklab_api_key");
       localStorage.removeItem("trafiklab_key_saved");
     }
     return !!currentApiKey;
   }
-  console.log("No API key found in localStorage");
+  console.log("Ingen API-nyckel hittades i localStorage");
   return false;
 }
 
@@ -187,7 +187,9 @@ function updateKeyStatus() {
   if (currentApiKey) {
     keyStatus.classList.remove("hidden");
     const saved = localStorage.getItem("trafiklab_api_key");
-    keyStatus.textContent = saved ? "🔒 Key Saved" : "🔒 Key Active (session)";
+    keyStatus.textContent = saved
+      ? "🔒 Nyckel sparad"
+      : "🔒 Nyckel aktiv (session)";
   } else {
     keyStatus.classList.add("hidden");
   }
@@ -201,7 +203,7 @@ function showApiKeyModal() {
 }
 
 function hideApiKeyModal() {
-  console.log("hideApiKeyModal called");
+  console.log("hideApiKeyModal anropad");
   apiKeyModal.classList.add("hidden");
 }
 
@@ -213,7 +215,7 @@ function canCloseModal() {
 async function validateAndSaveApiKey() {
   const key = apiKeyInput.value.trim();
   if (!key) {
-    showApiKeyError("Please enter an API key");
+    showApiKeyError("Vänligen ange en API-nyckel");
     return;
   }
 
@@ -235,10 +237,10 @@ async function validateAndSaveApiKey() {
       hideApiKeyModal();
     } else {
       const data = await resp.json();
-      showApiKeyError(data.error || "Invalid API key");
+      showApiKeyError(data.error || "Ogiltig API-nyckel");
     }
   } catch (e) {
-    showApiKeyError("Failed to validate key. Please try again.");
+    showApiKeyError("Kunde inte validera nyckel. Vänligen försök igen.");
   } finally {
     saveApiKeyBtn.disabled = false;
     saveApiKeyBtn.textContent = "Start Using Dashboard";
@@ -254,7 +256,7 @@ async function apiFetch(url) {
   const key = getApiKey();
   if (!key) {
     showApiKeyModal();
-    throw new Error("API key not configured");
+    throw new Error("API-nyckel inte konfigurerad");
   }
 
   const resp = await fetch(url, {
@@ -263,17 +265,17 @@ async function apiFetch(url) {
 
   if (resp.status === 401) {
     showApiKeyModal();
-    throw new Error("API key invalid");
+    throw new Error("API-nyckel ogiltig");
   }
 
   return resp;
 }
 
-// ==================== INITIALIZATION ====================
+// ==================== INITIERING ====================
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Dashboard initializing...");
-  console.log("localStorage content:", { ...localStorage });
+  console.log("Dashboard initieras...");
+  console.log("localStorage-innehåll:", { ...localStorage });
   console.log(
     "Modal initial hidden state:",
     apiKeyModal.classList.contains("hidden"),
@@ -289,13 +291,13 @@ document.addEventListener("DOMContentLoaded", () => {
     !!currentApiKey,
   );
   if (!hasKey) {
-    console.log("No valid key, showing modal");
+    console.log("Ingen giltig nyckel, visar modal");
     showApiKeyModal();
   } else {
-    console.log("Key found, hiding modal");
+    console.log("Nyckel hittad, döljer modal");
     hideApiKeyModal();
     updateKeyStatus();
-    console.log("API key active, ready to search");
+    console.log("API-nyckel aktiv, redo att söka");
   }
 });
 
@@ -326,7 +328,7 @@ function setupEventListeners() {
       hideApiKeyModal();
     } else {
       // Shake animation or error message could go here
-      apiKeyError.textContent = "Please enter an API key to continue";
+      apiKeyError.textContent = "Vänligen ange en API-nyckel för att fortsätta";
       apiKeyError.classList.remove("hidden");
     }
   });
@@ -389,7 +391,7 @@ function setupEventListeners() {
   });
 }
 
-// ==================== LOCATION SEARCH ====================
+// ==================== PLATSSÖKNING ====================
 
 function debouncedSearch(query, type) {
   clearTimeout(searchTimeout);
@@ -397,7 +399,7 @@ function debouncedSearch(query, type) {
     hideSuggestions(type);
     return;
   }
-  console.log(`[${type}] Debounced search for: "${query}"`);
+  console.log(`[${type}] Fördröjd sökning efter: "${query}"`);
   searchTimeout = setTimeout(() => searchLocations(query, type), 400);
 }
 
@@ -406,25 +408,25 @@ async function searchLocations(query, type) {
 
   const key = getApiKey();
   if (!key) {
-    console.log(`[${type}] No API key configured, showing modal`);
+    console.log(`[${type}] Ingen API-nyckel konfigurerad, visar modal`);
     showApiKeyModal();
     return;
   }
 
-  console.log(`[${type}] Searching for: "${query}"`);
+  console.log(`[${type}] Söker efter: "${query}"`);
   container.innerHTML =
-    '<div class="suggestion-item"><span class="loading-text">Searching...</span></div>';
+    '<div class="suggestion-item"><span class="loading-text">Söker...</span></div>';
   container.classList.add("active");
 
   try {
     const url = `/api/search?q=${encodeURIComponent(query)}`;
-    console.log(`[${type}] Fetching:`, url);
+    console.log(`[${type}] Hämtar:`, url);
 
     const resp = await fetch(url, {
       headers: { "X-API-Key": key },
     });
 
-    console.log(`[${type}] Response status:`, resp.status);
+    console.log(`[${type}] Svarstatus:`, resp.status);
 
     if (resp.status === 401) {
       showApiKeyModal();
@@ -436,7 +438,7 @@ async function searchLocations(query, type) {
     }
 
     const data = await resp.json();
-    console.log(`[${type}] Response data:`, data);
+    console.log(`[${type}] Svarsdata:`, data);
 
     let locations = null;
     if (data.StopLocation) {
@@ -449,21 +451,19 @@ async function searchLocations(query, type) {
       );
     }
 
-    console.log(`[${type}] Parsed locations:`, locations);
+    console.log(`[${type}] Tolkade platser:`, locations);
 
     displaySuggestions(locations, type);
   } catch (e) {
-    console.error(`[${type}] Search error:`, e);
+    console.error(`[${type}] Sökfel:`, e);
     container.innerHTML =
-      '<div class="suggestion-item error"><span class="error-text">Search failed. Check console.</span></div>';
+      '<div class="suggestion-item error"><span class="error-text">Sökning misslyckades. Kontrollera konsolen.</span></div>';
     setTimeout(() => hideSuggestions(type), 2000);
   }
 }
 
 function displaySuggestions(locations, type) {
-  console.log(
-    `[${type}] Displaying ${locations ? locations.length : 0} suggestions`,
-  );
+  console.log(`[${type}] Visar ${locations ? locations.length : 0} förslag`);
   const container = type === "from" ? fromSuggestions : toSuggestions;
   container.innerHTML = "";
 
@@ -475,14 +475,14 @@ function displaySuggestions(locations, type) {
 
   if (!locations || locations.length === 0) {
     container.innerHTML =
-      '<div class="suggestion-item no-results"><span class="no-results-text">No stations found</span></div>';
+      '<div class="suggestion-item no-results"><span class="no-results-text">Inga stationer hittades</span></div>';
     setTimeout(() => hideSuggestions(type), 2000);
     return;
   }
 
   locations.slice(0, 8).forEach((loc) => {
     if (!loc || !loc.name) {
-      console.log("Skipping location without name:", loc);
+      console.log("Hoppar över plats utan namn:", loc);
       return;
     }
 
@@ -510,10 +510,10 @@ function displaySuggestions(locations, type) {
     const typeEl = document.createElement("span");
     typeEl.className = "type";
     typeEl.textContent = loc.dist
-      ? `${loc.dist}m away`
+      ? `${loc.dist}m bort`
       : locType === "ST"
         ? "Station"
-        : "Address";
+        : "Adress";
 
     item.appendChild(icon);
     item.appendChild(nameEl);
@@ -542,7 +542,7 @@ function formatLocationName(name) {
 
 function selectLocation(type, location) {
   if (!location || !location.name) {
-    console.error("Cannot select location without name:", location);
+    console.error("Kan inte välja plats utan namn:", location);
     return;
   }
 
@@ -578,17 +578,36 @@ function hideAllSuggestions() {
   toSuggestions.classList.remove("active");
 }
 
-function getCurrentLocation(type) {
+async function getCurrentLocation(type) {
   if (!navigator.geolocation) {
-    alert("Geolocation is not supported by your browser");
+    alert("Geolokalisering stöds inte av din webbläsare");
     return;
   }
 
   const input = type === "from" ? fromInput : toInput;
-  input.placeholder = "Locating...";
+  input.placeholder = "Lokalisera...";
+
+  // Check permission state if available
+  if (navigator.permissions) {
+    try {
+      const result = await navigator.permissions.query({ name: "geolocation" });
+      console.log("Geolokaliseringsbehörighetstillstånd:", result.state);
+      if (result.state === "denied") {
+        input.placeholder = "Platsbehörighet nekad i webbläsarinställningar";
+        return;
+      }
+    } catch (e) {
+      console.log("Kunde inte fråga om behörighet:", e);
+    }
+  }
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      console.log(
+        "Geolocation success:",
+        position.coords.latitude,
+        position.coords.longitude,
+      );
       try {
         const { latitude, longitude } = position.coords;
         const resp = await apiFetch(
@@ -600,21 +619,43 @@ function getCurrentLocation(type) {
           const stop = data.stopLocationOrCoordLocation[0].StopLocation;
           selectLocation(type, stop);
         } else {
-          input.placeholder = "No nearby stops found";
+          input.placeholder = "Inga närliggande hållplatser hittades";
         }
       } catch (e) {
-        console.error("Failed to get nearby stops:", e);
-        input.placeholder = "Error finding location";
+        console.error("Kunde inte hämta närliggande hållplatser:", e);
+        input.placeholder = "Fel vid lokalisering";
       }
     },
     (error) => {
-      console.error("Geolocation error:", error);
-      input.placeholder = "Location access denied";
+      console.error(
+        "Geolocation error code:",
+        error.code,
+        "message:",
+        error.message,
+      );
+      let errorMsg = "Location error";
+      switch (error.code) {
+        case 1:
+          errorMsg = "Platsåtkomst nekad";
+          break;
+        case 2:
+          errorMsg = "Plats otillgänglig";
+          break;
+        case 3:
+          errorMsg = "Plats timeout";
+          break;
+      }
+      input.placeholder = errorMsg;
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 60000,
     },
   );
 }
 
-// ==================== ROUTE SEARCH ====================
+// ==================== RuttsÖKNING ====================
 
 function swapLocations() {
   const fromVal = fromInput.value;
@@ -637,13 +678,13 @@ async function searchRoutes() {
   const toText = toInput.value.trim();
 
   if (!fromText || !toText) {
-    alert("Please enter both origin and destination locations");
+    alert("Vänligen ange både ursprung och destination");
     return;
   }
 
   if (!fromId && !toId) {
     alert(
-      "Please select valid locations from the dropdown for both origin and destination",
+      "Vänligen välj giltiga platser från dropdown för både ursprung och destination",
     );
     return;
   }
@@ -678,7 +719,7 @@ async function searchRoutes() {
 
     if (dateVal) {
       url += `&date=${dateVal}`;
-      console.log(`Route date: ${dateVal}`);
+      console.log(`Ruttdatum: ${dateVal}`);
     }
 
     if (timeVal) {
@@ -690,12 +731,12 @@ async function searchRoutes() {
     const resp = await apiFetch(url);
     const data = await resp.json();
 
-    console.log("Route response:", data);
+    console.log("Ruttsvar:", data);
 
     if (data.error) {
-      console.error("Route API error:", data);
+      console.error("Rutt API-fel:", data);
       showError(
-        `Route search failed: ${data.error}${data.details ? " - " + data.details : ""}`,
+        `Ruttsökning misslyckades: ${data.error}${data.details ? " - " + data.details : ""}`,
       );
     } else if (data.Trip?.length > 0) {
       displayTrips(data.Trip);
@@ -703,13 +744,13 @@ async function searchRoutes() {
       showNoResults();
     }
   } catch (e) {
-    console.error("Route search error:", e);
+    console.error("Ruttsökningsfel:", e);
     hideLoading();
-    showError(`Route search failed: ${e.message}`);
+    showError(`Ruttsökning misslyckades: ${e.message}`);
   }
 }
 
-// ==================== DISPLAY RESULTS ====================
+// ==================== VISA RESULTAT ====================
 
 function displayTrips(trips) {
   hideLoading();
@@ -803,13 +844,13 @@ function getTransportType(leg) {
 
   // Check transportCategory
   if (leg.transportCategory) {
-    console.log("Using transportCategory:", leg.transportCategory);
+    console.log("Använder transportCategory:", leg.transportCategory);
     return leg.transportCategory;
   }
 
   // Check product.catOutS
   if (product?.catOutS) {
-    console.log("Using product.catOutS:", product.catOutS);
+    console.log("Använder product.catOutS:", product.catOutS);
     // Map codes for icon consistency
     if (product.catOutS === "SLT") return "TRM";
     if (product.catOutS === "BLT") return "BUS";
@@ -819,7 +860,7 @@ function getTransportType(leg) {
   // Check product.catOutL (long name)
   if (product?.catOutL) {
     const longName = product.catOutL.toLowerCase();
-    console.log("Checking product.catOutL:", longName);
+    console.log("Kontrollerar product.catOutL:", longName);
 
     if (longName.includes("buss")) return "BUS";
     if (longName.includes("spårvagn") || longName.includes("spårv"))
@@ -837,7 +878,7 @@ function getTransportType(leg) {
   // Check leg.name FIRST (it usually has the most descriptive name)
   if (leg.name) {
     const name = leg.name.toLowerCase();
-    console.log("Checking leg.name:", name);
+    console.log("Kontrollerar leg.name:", name);
     if (name.includes("tunnelbana")) return "MET";
     if (name.includes("buss")) return "BUS";
     if (name.includes("spårv")) return "TRM";
@@ -856,7 +897,7 @@ function getTransportType(leg) {
   // Check product.name
   if (product?.name) {
     const prodName = product.name.toLowerCase();
-    console.log("Checking product.name:", prodName);
+    console.log("Kontrollerar product.name:", prodName);
     if (prodName.includes("tunnelbana")) return "MET";
     if (prodName.includes("buss")) return "BUS";
     if (prodName.includes("spårv")) return "TRM";
@@ -864,7 +905,7 @@ function getTransportType(leg) {
     if (prodName.includes("tvärbana")) return "TRM";
   }
 
-  console.log("Defaulting to JRE");
+  console.log("Återgår till JRE");
   return "JRE";
 }
 
@@ -885,8 +926,8 @@ function getTransportClass(type) {
 function getTransfersText(legs) {
   const transportLegs = legs.filter((l) => l.type === "JNY");
   return transportLegs.length <= 1
-    ? "Direct"
-    : `${transportLegs.length - 1} transfer${transportLegs.length > 2 ? "s" : ""}`;
+    ? "Direkt"
+    : `${transportLegs.length - 1} byte${transportLegs.length > 2 ? "n" : ""}`;
 }
 
 function getLegsDetail(legs) {
@@ -896,9 +937,9 @@ function getLegsDetail(legs) {
       const icon = transportIcons[type] || "🚆";
       // Product is an array
       const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
-      let name = product?.name || transportNames[type] || "Walk";
+      let name = product?.name || transportNames[type] || "Gång";
 
-      // Add operator prefix for non-SL/Länstrafik operators
+      // Lägg till operatörsprefix för icke-SL/Länstrafik-operatörer
       const operator = product?.operator || product?.operatorInfo?.name;
       if (operator && operator !== "SL" && !operator.includes("Länstrafik")) {
         name = `${operator} ${name}`;
@@ -913,7 +954,7 @@ function getLegsDetail(legs) {
                 </div>
                 <div class="leg-info">
                     <div class="leg-station">${icon} ${formatLocationName(leg.Origin.name)}</div>
-                    <div class="leg-line">→ ${name} to ${formatLocationName(leg.Destination.name)}</div>
+                    <div class="leg-line">→ ${name} till ${formatLocationName(leg.Destination.name)}</div>
                 </div>
             </div>
         `;

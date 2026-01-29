@@ -1,67 +1,66 @@
-# 🚆 Swedish Commute Dashboard
-
-A lightweight web dashboard for finding public transport routes across Sweden using buses, trains, trams, and more.
+# 🚆 resrobot-bättre
+En lättviktig webbdashboard för att hitta kollektivtrafikrutter i hela Sverige med bussar, tåg, spårvagnar och mer.
 
 ![Dashboard Preview](static/screenshot.png)
 
-## Features
+## Funktioner
 
-- 🔍 **Location Search**: Search for stations and stops across Sweden
-- 📍 **Current Location**: Use your GPS to find nearby stops
-- 🚆 **Multi-modal Routes**: Get routes using trains, buses, trams, metro, and more
-- ⏰ **Departure Time**: Plan trips for specific dates and times
-- 🔑 **Secure API Key Storage**: Key is obfuscated and stored locally in your browser
-- 📱 **Mobile-friendly**: Responsive design works on all devices
-- ⚡ **Lightweight**: No heavy frameworks, fast loading
+- 🔍 **Sök platser**: Sök efter stationer och hållplatser i hela Sverige
+- 📍 **Nuvarande plats**: Använd din GPS för att hitta närliggande hållplatser
+- 🚆 **Multimodala rutter**: Få rutter med tåg, bussar, spårvagnar, tunnelbana och mer
+- ⏰ **Avgångstid**: Planera resor för specifika datum och tider
+- 🔑 **Säker API-nyckellagring**: Nyckeln är förvrängd och lagras lokalt i din webbläsare
+- 📱 **Mobilanpassad**: Responsiv design fungerar på alla enheter
+- ⚡ **Lättviktig**: Inga tunga ramverk, snabb laddning
 
-## Data Source
+## Datakälla
 
-This app uses the [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/route-planner/) from Trafiklab, which covers all public transport operators in Sweden.
+Denna app använder [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/route-planner/) från Trafiklab, som täcker alla kollektivtrafikoperatörer i Sverige.
 
-## Quick Start
+## Snabbstart
 
-### 1. Install Dependencies
+### 1. Installera dependency
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Run the App
+### 2. Kör appen
 
 ```bash
 python app.py
 ```
 
-### 3. Open in Browser
+### 3. Öppna i webbläsare
 
-Navigate to: http://localhost:5000
+Navigera till: http://localhost:5000
 
-### 4. Enter Your API Key
+### 4. Ange din API-nyckel
 
-On first launch, you'll see a modal asking for your Trafiklab API key:
+Vid första starten visas en dialogruta som ber om din Trafiklab API-nyckel:
 
-1. Go to [trafiklab.se](https://www.trafiklab.se/) and create a free account
-2. Subscribe to the **ResRobot - v2.1** API (Bronze tier is free)
-3. Copy your API key and paste it into the dashboard
-4. Check "Remember this key" to save it securely in your browser
+1. Gå till [trafiklab.se](https://www.trafiklab.se/) och skapa ett gratis konto
+2. Prenumerera på **ResRobot - v2.1** API (Bronze-nivån är gratis)
+3. Kopiera din API-nyckel och klistra in den i dashboarden
+4. Kryssa i "Kom ihåg denna nyckel" för att spara den säkert i din webbläsare
 
-Your API key is **obfuscated** (not plaintext) and stored in your browser's localStorage. You can change it anytime by clicking the **⚙️ Settings** button.
+Din API-nyckel är **förvrängd** (inte klartext) och lagras i din webbläsares localStorage. Du kan ändra den när som helst genom att klicka på knappen **⚙️ Inställningar**.
 
-## Usage
+## Användning
 
-1. **Enter Origin**: Type a station name in the "From" field and select from suggestions
-2. **Enter Destination**: Type a station name in the "To" field
-3. **Set Time** (optional): Adjust the date and time for your journey
-4. **Find Routes**: Click "Find Routes" to see available trips
-5. **View Details**: Click on any route card to see detailed leg information
+1. **Ange ursprung**: Skriv ett stationsnamn i fältet "Från" och välj från förslag
+2. **Ange destination**: Skriv ett stationsnamn i fältet "Till"
+3. **Ställ in tid** (valfritt): Justera datum och tid för din resa
+4. **Hitta rutter**: Klicka på "Hitta rutter" för att se tillgängliga resor
+5. **Visa detaljer**: Klicka på ett ruttkort för att se detaljerad sträckinformation
 
 ### Tips
 
-- Use the 📍 button to find stops near your current location
-- Click ⇅ to swap origin and destination
-- Station names are formatted for readability
+- Använd 📍-knappen för att hitta hållplatser nära din nuvarande plats
+- Klicka på ⇅ för att byta ursprung och destination
+- Stationsnamn formateras för läsbarhet
 
-## Project Structure
+## Projektstruktur
 
 ```
 .
@@ -75,33 +74,33 @@ Your API key is **obfuscated** (not plaintext) and stored in your browser's loca
     └── index.html     # Main page
 ```
 
-## API Key Security
+## API-nyckelsäkerhet
 
-The API key is handled securely:
+API-nyckeln hanteras säkert:
 
-- **Obfuscation**: Keys are obfuscated using XOR + Base64 before storage
-- **Local only**: Keys are stored in your browser's localStorage, never on our server
-- **Per-request**: Key is sent with each API request via HTTP headers
-- **Session option**: You can choose not to remember the key (it will only be stored in memory)
+- **Förvrängning**: Nycklar förvrängs med XOR + Base64 före lagring
+- **Endast lokalt**: Nycklar lagras i din webbläsares localStorage, aldrig på vår server
+- **Per begäran**: Nyckeln skickas med varje API-begäran via HTTP-headers
+- **Sessionsalternativ**: Du kan välja att inte komma ihåg nyckeln (den lagras endast i minnet)
 
-**Note**: Obfuscation is not encryption - it prevents casual snooping but determined attackers with access to your browser could still retrieve it. For shared computers, don't check "Remember this key".
+**Notera**: Förvrängning är inte kryptering - det förhindrar tillfällig titt men bestämda angripare med tillgång till din webbläsare kan fortfarande hämta den. För delade datorer, kryssa inte i "Kom ihåg denna nyckel".
 
-## API Endpoints
+## API-slutpunkter
 
-The Flask backend proxies requests to protect your API key:
+Flask-backenden proxyar begäranden för att skydda din API-nyckel:
 
-- `GET /api/search?q=<query>` - Search for locations
-- `GET /api/nearby?lat=<lat>&lon=<lon>` - Find nearby stops
-- `GET /api/route?from=<id>&to=<id>&date=<date>&time=<time>` - Get routes
-- `POST /api/validate-key` - Validate an API key
+- `GET /api/search?q=<fråga>` - Sök efter platser
+- `GET /api/nearby?lat=<lat>&lon=<lon>` - Hitta närliggande hållplatser
+- `GET /api/route?from=<id>&to=<id>&date=<datum>&time=<tid>` - Hämta rutter
+- `POST /api/validate-key` - Validera en API-nyckel
 
-All endpoints require the `X-API-Key` header.
+Alla slutpunkter kräver headern `X-API-Key`.
 
-## License
+## Licens
 
-MIT License - feel free to use and modify as needed.
+MIT-licens - använd och modifiera fritt efter behov.
 
-## Credits
+## Erkännanden
 
-- Data provided by [Trafiklab](https://www.trafiklab.se/)
-- Uses [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/)
+- Data tillhandahållna av [Trafiklab](https://www.trafiklab.se/)
+- Använder [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobot-v21/)
