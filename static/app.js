@@ -290,6 +290,10 @@ async function apiFetch(url) {
     throw new Error("API-nyckel ogiltig");
   }
 
+  if (!resp.ok) {
+    throw new Error(`HTTP error! status: ${resp.status}`);
+  }
+
   return resp;
 }
 
@@ -570,6 +574,16 @@ function formatLocationName(name) {
   );
 }
 
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function selectLocation(type, location) {
   if (!location || !location.name) {
     console.error("Kan inte välja plats utan namn:", location);
@@ -838,9 +852,11 @@ function createTripCard(trip, isPreferred = false) {
   const firstLeg = legs[0];
   const lastLeg = legs[legs.length - 1];
 
-  const depTime = formatTimeString(firstLeg.Origin.time);
-  const arrTime = formatTimeString(lastLeg.Destination.time);
-  const duration = calculateDuration(firstLeg.Origin, lastLeg.Destination);
+  const depTime = escapeHtml(formatTimeString(firstLeg.Origin.time));
+  const arrTime = escapeHtml(formatTimeString(lastLeg.Destination.time));
+  const duration = escapeHtml(
+    calculateDuration(firstLeg.Origin, lastLeg.Destination),
+  );
 
   const card = document.createElement("div");
   card.className = `trip-card${isPreferred ? " trip-preferred" : ""}`;
@@ -1052,17 +1068,25 @@ function getLegsDetail(legs, trip) {
         leg.Origin.name === preferredLegOrigin;
       const preferredClass = isPreferredLeg ? "leg-preferred" : "";
       const preferredIcon = isPreferredLeg ? "⭐ " : "";
+      const originName = escapeHtml(formatLocationName(leg.Origin.name));
+      const destinationName = escapeHtml(
+        formatLocationName(leg.Destination.name),
+      );
+      const displayName = escapeHtml(name);
+
+      const depTime = escapeHtml(formatTimeString(leg.Origin.time));
+      const arrTime = escapeHtml(formatTimeString(leg.Destination.time));
 
       return `
             <div class="leg-detail ${clickableClass} ${preferredClass}" data-leg-index="${index}">
                 <div class="leg-time-line">
-                    <span class="leg-dep-time">${preferredIcon}${formatTimeString(leg.Origin.time)}</span>
+                    <span class="leg-dep-time">${preferredIcon}${depTime}</span>
                     <span class="time-line"></span>
-                    <span class="leg-arr-time">${formatTimeString(leg.Destination.time)}</span>
+                    <span class="leg-arr-time">${arrTime}</span>
                 </div>
                 <div class="leg-info">
-                    <div class="leg-station">${icon} ${formatLocationName(leg.Origin.name)}</div>
-                    <div class="leg-line">→ ${name} till ${formatLocationName(leg.Destination.name)}</div>
+                    <div class="leg-station">${icon} ${originName}</div>
+                    <div class="leg-line">→ ${displayName} till ${destinationName}</div>
                 </div>
             </div>
         `;
@@ -1112,7 +1136,13 @@ function showAlternativesModal(leg, legIndex, trip) {
   const stopId = leg.Origin.extId || leg.Origin.id;
   const stopName = leg.Origin.name;
   const legDuration = calculateLegDuration(leg);
-  alternativesInfo.innerHTML = `Visar avgångar från ${formatLocationName(stopName)} mot ${formatLocationName(leg.Destination.name)}. Nuvarande sträcka tar ${legDuration} minuter.<br><small>Observera: Om du väljer ett annat alternativ räknas hela resan om för att hitta de bästa anslutningarna.</small>`;
+  alternativesInfo.innerHTML = `Visar avgångar från ${escapeHtml(
+    formatLocationName(stopName),
+  )} mot ${escapeHtml(
+    formatLocationName(leg.Destination.name),
+  )}. Nuvarande sträcka tar ${escapeHtml(
+    legDuration,
+  )} minuter.<br><small>Observera: Om du väljer ett annat alternativ räknas hela resan om för att hitta de bästa anslutningarna.</small>`;
   alternativesList.innerHTML =
     '<div class="suggestion-item"><span class="loading-text">Laddar alternativ...</span></div>';
   alternativesModal.classList.remove("hidden");
@@ -1238,14 +1268,17 @@ function displayAlternatives(departures, currentLeg, trip) {
       : "";
 
     const icon = transportIcons[dep.Product?.catOutS] || "🚌";
+    const depName = escapeHtml(dep.name || dep.Product?.name || "");
+    const depDirection = escapeHtml(formatLocationName(dep.direction || ""));
+    const depTime = escapeHtml(dep.time?.substring(0, 5) || "");
 
     return `
       <div class="suggestion-item alternative-departure ${dep.isCurrent ? "current" : ""}"
-           data-time="${dep.time}" data-date="${dep.date}">
+           data-time="${escapeHtml(dep.time || "")}" data-date="${escapeHtml(dep.date || "")}">
         <span class="icon">${icon}</span>
         <span class="name">
-          ${dep.time.substring(0, 5)}${diffText} -
-          ${dep.name || dep.Product?.name} mot ${formatLocationName(dep.direction)}${durationText}
+          ${depTime}${diffText} -
+          ${depName} mot ${depDirection}${durationText}
         </span>
         <span class="type">${dep.isCurrent ? "Nuvarande" : "Välj"}</span>
       </div>
