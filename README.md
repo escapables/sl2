@@ -26,6 +26,12 @@ Denna app använder [ResRobot API](https://www.trafiklab.se/api/our-apis/resrobo
 pip install -r requirements.txt
 ```
 
+### 1b. Installera test-beroenden (valfritt)
+
+```bash
+pip install -r requirements-dev.txt
+```
+
 ### 2. Kör appen
 
 ```bash
@@ -61,6 +67,27 @@ Din API-nyckel är **förvrängd** (inte klartext) och lagras i din webbläsares
 - Klicka på ⇅ för att byta ursprung och destination
 - **Klicka på en sträcka** (tåg/buss) i ruttinformationen för att se alternativa avgångar
 - Stationsnamn formateras för läsbarhet
+
+## Tester
+
+Backend (pytest):
+```bash
+pytest
+```
+
+Frontend (Playwright):
+```bash
+npm install
+npm run test:e2e
+```
+
+Kör allt (backend + frontend):
+```bash
+npm run test
+```
+
+Obs: E2E-testerna förutsätter att appen körs lokalt på http://localhost:5000.
+Obs: Ruttkort måste expanderas för att leg-sträckor ska vara klickbara (samma gäller i E2E-tester).
 
 ## Projektstruktur
 

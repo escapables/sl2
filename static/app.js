@@ -117,6 +117,18 @@ const transportNames = {
 
 // ==================== API-NYCKELSÄKERHET ====================
 
+function toArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function getPreferredLegIndex() {
+  const raw = sessionStorage.getItem("preferredLegIndex");
+  if (raw === null) return null;
+  const idx = Number.parseInt(raw, 10);
+  return Number.isNaN(idx) ? null : idx;
+}
+
 function obfuscateKey(key) {
   if (!key) return "";
   const pattern = [0x47, 0x82, 0xa1, 0x3f, 0xe5, 0x19, 0x6b, 0xcd];
@@ -756,10 +768,13 @@ async function searchRoutes() {
       showError(
         `Ruttsökning misslyckades: ${data.error}${data.details ? " - " + data.details : ""}`,
       );
-    } else if (data.Trip?.length > 0) {
-      displayTrips(data.Trip);
     } else {
-      showNoResults();
+      const trips = toArray(data.Trip);
+      if (trips.length > 0) {
+        displayTrips(trips);
+      } else {
+        showNoResults();
+      }
     }
   } catch (e) {
     console.error("Ruttsökningsfel:", e);
@@ -778,16 +793,16 @@ function displayTrips(trips) {
   tripsList.innerHTML = "";
 
   // Kolla om det finns ett föredraget alternativ
-  const preferredLegIndex = sessionStorage.getItem("preferredLegIndex");
+  const preferredLegIndex = getPreferredLegIndex();
   const preferredLegTime = sessionStorage.getItem("preferredLegTime");
   const preferredLegDate = sessionStorage.getItem("preferredLegDate");
 
   // Sortera resor så att de med det föredragna alternativet visas först
   const sortedTrips = [...trips].sort((a, b) => {
-    if (!preferredLegIndex) return 0;
+    if (preferredLegIndex === null) return 0;
 
-    const aLegs = a.LegList?.Leg || [];
-    const bLegs = b.LegList?.Leg || [];
+    const aLegs = toArray(a.LegList?.Leg);
+    const bLegs = toArray(b.LegList?.Leg);
 
     const aMatches =
       aLegs[preferredLegIndex]?.Origin.time === preferredLegTime &&
@@ -802,8 +817,10 @@ function displayTrips(trips) {
   });
 
   sortedTrips.forEach((trip, index) => {
-    const card = createTripCard(trip, index === 0 && preferredLegIndex);
-    tripsList.appendChild(card);
+    const card = createTripCard(trip, index === 0 && preferredLegIndex !== null);
+    if (card) {
+      tripsList.appendChild(card);
+    }
   });
 
   // Rensa preferred alternativ efter visning
@@ -813,7 +830,11 @@ function displayTrips(trips) {
 }
 
 function createTripCard(trip, isPreferred = false) {
-  const legs = trip.LegList?.Leg || [];
+  const legs = toArray(trip.LegList?.Leg);
+  if (legs.length === 0) {
+    console.warn("Trip saknar legs, hoppar över kort:", trip);
+    return null;
+  }
   const firstLeg = legs[0];
   const lastLeg = legs[legs.length - 1];
 
@@ -994,14 +1015,14 @@ function getTransfersText(legs) {
 
 function getLegsDetail(legs, trip) {
   // Kolla om det finns ett föredraget alternativ
-  const preferredLegIndex = sessionStorage.getItem("preferredLegIndex");
+  const preferredLegIndex = getPreferredLegIndex();
   const preferredLegTime = sessionStorage.getItem("preferredLegTime");
   const preferredLegOrigin = sessionStorage.getItem("preferredLegOrigin");
   const preferredLegDestination = sessionStorage.getItem(
     "preferredLegDestination",
   );
 
-  return legs
+  return toArray(legs)
     .map((leg, index) => {
       const type = getTransportType(leg);
       const icon = transportIcons[type] || "🚆";
@@ -1025,8 +1046,8 @@ function getLegsDetail(legs, trip) {
 
       // Kolla om denna sträcka är det föredragna alternativet
       const isPreferredLeg =
-        preferredLegIndex &&
-        parseInt(preferredLegIndex) === index &&
+        preferredLegIndex !== null &&
+        preferredLegIndex === index &&
         leg.Origin.time === preferredLegTime &&
         leg.Origin.name === preferredLegOrigin;
       const preferredClass = isPreferredLeg ? "leg-preferred" : "";
@@ -1080,14 +1101,16 @@ function showError(message) {
 // ==================== ALTERNATIVE DEPARTURES ====================
 
 function showAlternativesModal(leg, legIndex, trip) {
+  if (!leg) {
+    console.warn("Saknar leg för alternatives-modal:", legIndex, trip);
+    return;
+  }
   currentLegIndex = legIndex;
   currentTrip = trip;
 
   const product = Array.isArray(leg.Product) ? leg.Product[0] : leg.Product;
   const stopId = leg.Origin.extId || leg.Origin.id;
   const stopName = leg.Origin.name;
-  const currentTime = leg.Origin.time;
-
   const legDuration = calculateLegDuration(leg);
   alternativesInfo.innerHTML = `Visar avgångar från ${formatLocationName(stopName)} mot ${formatLocationName(leg.Destination.name)}. Nuvarande sträcka tar ${legDuration} minuter.<br><small>Observera: Om du väljer ett annat alternativ räknas hela resan om för att hitta de bästa anslutningarna.</small>`;
   alternativesList.innerHTML =
@@ -1120,7 +1143,7 @@ async function fetchAlternativeDepartures(stopId, currentLeg, trip) {
     const data = await resp.json();
 
     if (data.Departure) {
-      displayAlternatives(data.Departure, currentLeg, trip);
+      displayAlternatives(toArray(data.Departure), currentLeg, trip);
     } else {
       alternativesList.innerHTML =
         '<div class="suggestion-item no-results"><span class="no-results-text">Inga alternativa avgångar hittades</span></div>';
@@ -1295,8 +1318,13 @@ async function selectAlternativeDeparture(date, time, trip, legIdx) {
   showLoading();
 
   // Hämta information om den valda sträckan
-  const legs = trip.LegList?.Leg || [];
+  const legs = toArray(trip.LegList?.Leg);
   const selectedLeg = legs[legIdx];
+  if (!selectedLeg) {
+    console.warn("Vald sträcka saknas:", legIdx, trip);
+    hideLoading();
+    return;
+  }
 
   // Beräkna tidsförskjutningen för den valda sträckan
   const originalTime = selectedLeg.Origin.time;
@@ -1310,8 +1338,8 @@ async function selectAlternativeDeparture(date, time, trip, legIdx) {
   const firstLeg = legs[0];
   const lastLeg = legs[legs.length - 1];
 
-  const fromId = firstLeg.Origin.extId;
-  const toId = lastLeg.Destination.extId;
+  const fromId = firstLeg.Origin.extId || firstLeg.Origin.id;
+  const toId = lastLeg.Destination.extId || lastLeg.Destination.id;
 
   // Sätt ny tid (justera för tidsförskjutningen)
   const originalDateTime = new Date(
